@@ -1,15 +1,16 @@
-export type Role = 'user' | 'ai' | 'system';
-
 export interface Message {
   id: string;
-  role: Role;
-  content: string;
-  image?: string; // Base64 data URL of an image associated with the message
-  isError?: boolean;
+  role: 'user' | 'model';
+  text: string;
+  isLoading?: boolean;
 }
 
-export interface ImageState {
-  original: string | null;
-  current: string | null; // The version currently being edited/viewed
-  history: string[]; // Stack for undo functionality (optional, but good structure)
+export interface EditState {
+  originalImage: string | null; // base64
+  history: string[]; // Array of base64 strings
+  currentIndex: number;
+}
+
+export interface Suggestion {
+  text: string;
 }

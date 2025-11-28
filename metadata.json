@@ -1,4 +1,5 @@
 {
-  "name": "Nano Flash Image Editor",
-  "description": "An intelligent image editor powered by Gemini 2.5 Flash Image. Upload photos, chat with AI to interpret them, and use natural language prompts to edit and transform your images in real-time."
+  "name": "Copy of Copy of Gemini Photo Editor",
+  "description": "An AI-powered photo editing tool using Gemini 2.5 Flash Image model to transform images via natural language prompts.",
+  "requestFramePermissions": []
 }

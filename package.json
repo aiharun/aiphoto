@@ -1,5 +1,5 @@
 {
-  "name": "nano-flash-image-editor",
+  "name": "copy-of-copy-of-gemini-photo-editor",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "uuid": "^13.0.0",
     "@google/genai": "^1.30.0",
-    "lucide-react": "^0.554.0"
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

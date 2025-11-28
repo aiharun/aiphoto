@@ -1,52 +1,83 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
 
-const getAiClient = () => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    throw new Error("API_KEY is not defined");
-  }
-  return new GoogleGenAI({ apiKey });
+// Initialize the client with the API key from the environment
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+/**
+ * Helper to strip the data URL prefix (e.g., "data:image/png;base64,")
+ */
+const stripBase64Prefix = (base64Str: string): string => {
+  return base64Str.replace(/^data:image\/\w+;base64,/, "");
 };
 
 /**
- * Helper to extract base64 data and mimeType from a Data URL
+ * Helper to determine mime type from base64 string header
  */
-const parseDataUrl = (dataUrl: string) => {
-  const matches = dataUrl.match(/^data:(.+);base64,(.+)$/);
-  if (!matches || matches.length !== 3) {
-    throw new Error("Invalid data URL format");
-  }
-  return {
-    mimeType: matches[1],
-    data: matches[2],
-  };
+const getMimeType = (base64Str: string): string => {
+  const match = base64Str.match(/^data:([^;]+);/);
+  return match ? match[1] : "image/png";
 };
 
-export interface GenerateResponse {
-  text?: string;
-  image?: string; // Base64 Data URL
-}
-
-/**
- * Sends an image and a text prompt to Gemini 2.5 Flash Image.
- * It handles both "analysis" (text response) and "editing" (image response).
- */
-export const generateEditOrDescription = async (
-  imageBase64: string,
-  prompt: string
-): Promise<GenerateResponse> => {
+export const getPhotoSuggestions = async (base64Image: string): Promise<string[]> => {
   try {
-    const ai = getAiClient();
-    const { mimeType, data } = parseDataUrl(imageBase64);
+    const cleanBase64 = stripBase64Prefix(base64Image);
+    const mimeType = getMimeType(base64Image);
+
+    // Use gemini-2.5-flash for analysis as it supports JSON schema and multimodal input
+    const modelId = "gemini-2.5-flash";
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+      model: modelId,
       contents: {
         parts: [
           {
             inlineData: {
-              mimeType,
-              data,
+              mimeType: mimeType,
+              data: cleanBase64,
+            },
+          },
+          {
+            text: "Analyze this image and provide a list of 3 short, creative editing prompts to improve or transform it. Example: ['Make it a sunset', 'Add a cyberpunk filter'].",
+          },
+        ],
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.STRING
+          }
+        }
+      }
+    });
+
+    if (response.text) {
+        return JSON.parse(response.text);
+    }
+    return [];
+  } catch (error) {
+    console.error("Error getting suggestions:", error);
+    return ["Make it black and white", "Make the colors more vibrant", "Add a futuristic glow"];
+  }
+};
+
+export const editImage = async (base64Image: string, prompt: string): Promise<string> => {
+  const cleanBase64 = stripBase64Prefix(base64Image);
+  const mimeType = getMimeType(base64Image);
+  
+  // Using gemini-2.5-flash-image for editing as per guidelines for general image editing
+  const modelId = "gemini-2.5-flash-image";
+
+  try {
+    const response: GenerateContentResponse = await ai.models.generateContent({
+      model: modelId,
+      contents: {
+        parts: [
+          {
+            inlineData: {
+              mimeType: mimeType,
+              data: cleanBase64,
             },
           },
           {
@@ -56,29 +87,18 @@ export const generateEditOrDescription = async (
       },
     });
 
-    let resultText = "";
-    let resultImage = "";
-
-    if (response.candidates && response.candidates[0]?.content?.parts) {
+    // Iterate to find the image part
+    if (response.candidates && response.candidates[0].content.parts) {
       for (const part of response.candidates[0].content.parts) {
-        if (part.text) {
-          resultText += part.text;
-        }
-        if (part.inlineData && part.inlineData.data) {
-          // Construct data URL from raw base64
-          const mime = part.inlineData.mimeType || "image/png";
-          resultImage = `data:${mime};base64,${part.inlineData.data}`;
+        if (part.inlineData) {
+          return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
         }
       }
     }
-
-    return {
-      text: resultText,
-      image: resultImage || undefined,
-    };
-
+    
+    throw new Error("No image generated");
   } catch (error) {
-    console.error("Gemini API Error:", error);
+    console.error("Error editing image:", error);
     throw error;
   }
 };
