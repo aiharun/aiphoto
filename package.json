@@ -1,22 +1,18 @@
 {
-  "name": "wid-ai-photo",
-  "homepage": "https://aiharun.github.io/photo",
+  "name": "nano-flash-image-editor",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@google/genai": "^1.30.0",
-    "gh-pages": "^6.3.0",
-    "lucide-react": "^0.554.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "@google/genai": "^1.30.0",
+    "lucide-react": "^0.554.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
